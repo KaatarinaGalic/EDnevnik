@@ -50,4 +50,21 @@ public class UserService {
     public Optional<User> findByEmail(String email) {
         return userRepository.findByEmail(email);
     }
+
+    public void changePassword(String email, String oldPassword, String newPassword) {
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Korisnik ne postoji"));
+
+        // provjera stare lozinke
+        if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
+            throw new RuntimeException("Stara lozinka nije ispravna");
+        }
+
+        // hash nove lozinke
+        user.setPassword(passwordEncoder.encode(newPassword));
+
+        userRepository.save(user);
+    }
+
 }
