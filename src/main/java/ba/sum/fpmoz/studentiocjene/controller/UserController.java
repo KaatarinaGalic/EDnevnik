@@ -105,4 +105,43 @@ public class UserController {
         return ResponseEntity.ok("Lozinka uspješno promijenjena");
     }
 
+    @Operation(
+            summary = "Brisanje korisničkog računa",
+            description = "Samo ADMIN može obrisati korisnika po ID-u. Admin ne može obrisati sam sebe."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Korisnik uspješno obrisan"),
+            @ApiResponse(responseCode = "400", description = "Admin ne može obrisati sam sebe"),
+            @ApiResponse(responseCode = "404", description = "Korisnik nije pronađen"),
+            @ApiResponse(responseCode = "403", description = "Zabranjen pristup")
+    })
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> deleteUser(@PathVariable Long id, Authentication authentication) {
+
+        // email trenutno ulogiranog admina (iz JWT-a)
+        String adminEmail = authentication.getName();
+
+        User admin = userRepository.findByEmail(adminEmail)
+                .orElseThrow(() -> new RuntimeException("Admin nije pronađen"));
+
+        // admin ne smije obrisati sam sebe
+        if (admin.getId().equals(id)) {
+            return ResponseEntity
+                    .badRequest()
+                    .body("Admin ne može obrisati sam sebe");
+        }
+
+        // provjera postoji li korisnik
+        if (!userRepository.existsById(id)) {
+            return ResponseEntity
+                    .status(404)
+                    .body("Korisnik nije pronađen");
+        }
+
+        userRepository.deleteById(id);
+        return ResponseEntity.ok("Korisnik uspješno obrisan");
+    }
+
+
 }
