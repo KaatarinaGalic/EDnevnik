@@ -43,7 +43,7 @@ public class User {
     @Column(nullable = false, unique = true)
     @Schema(
             description = "Email adresa korisnika (koristi se za login)",
-            example = "Kataa@test.com"
+            example = "katarinagalic@gmail.com"
     )
     private String email;
 
@@ -69,10 +69,12 @@ public class User {
             inverseJoinColumns = @JoinColumn(name = "role_id")
     )
     @JsonIgnoreProperties("users")
-    @Schema(
+    /*@Schema(
             description = "Uloge dodijeljene korisniku",
             accessMode = Schema.AccessMode.READ_ONLY
-    )
+    )*/
+    @JsonIgnore
+    @Schema(hidden = true)
     private Set<Role> roles = new HashSet<>();
 
     public User() {}
@@ -133,7 +135,8 @@ public class User {
     public void setPassword(String password) {
         this.password = password;
     }
-
+    @JsonIgnore
+    @Schema(hidden = true)
     public Set<Role> getRoles() {
         return roles;
     }

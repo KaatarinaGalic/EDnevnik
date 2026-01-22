@@ -17,6 +17,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -78,7 +79,7 @@ public class AuthController {
     public ResponseEntity<?> login(
             @io.swagger.v3.oas.annotations.parameters.RequestBody(content = @Content(
                     examples = @ExampleObject(
-                            value = "{\"email\": \"Kaca@example.com\", \"password\": \"password123\"}"
+                            value = "{\"email\": \"katarinagalic@gmail.com\", \"password\": \"password123\"}"
                     )
             ))
             @RequestBody Map<String, String> userData) {
@@ -99,16 +100,19 @@ public class AuthController {
 
         // Generiraj token
         String accessToken = jwtUtil.generateToken(user.getEmail(), roles);
-        String refreshToken = jwtUtil.generateRefreshToken();
+        String refreshToken = jwtUtil.generateRefreshToken(user.getEmail());
 
-        // Spremi refresh token
-        user.setRefreshToken(refreshToken);
-        userRepository.save(user);
 
-        return ResponseEntity.ok(Map.of(
-                "accessToken", accessToken,
-                "refreshToken", refreshToken
-        ));
+
+        Map<String, String> tokens = new LinkedHashMap<>();
+        tokens.put("accessToken", accessToken);
+        tokens.put("refreshToken", refreshToken);
+
+        return ResponseEntity.ok(tokens);
+
+
+
+
     }
 
     @Operation(
@@ -121,16 +125,22 @@ public class AuthController {
     })
     @PostMapping("/refresh")
     public ResponseEntity<?> refreshToken(@RequestParam String refreshToken) {
-        User user = userRepository.findByRefreshToken(refreshToken).orElse(null);
 
-        if (user == null) {
+        if (!jwtUtil.validateToken(refreshToken)) {
             return ResponseEntity.status(401).body("Nevažeći refresh token.");
         }
 
+        String email = jwtUtil.extractUsername(refreshToken);
+
+        User user = userRepository.findByEmail(email).orElse(null);
+        if (user == null) {
+            return ResponseEntity.status(401).body("Nevažeći korisnik.");
+        }
+        //uzima user ili admin i stavlja ulogu u jwt
         List<String> roles = user.getRoles().stream()
                 .map(Role::getName)
                 .collect(Collectors.toList());
-
+        //noci access token, moze dalje koristiti aplikaiju
         String newAccessToken = jwtUtil.generateToken(user.getEmail(), roles);
 
         return ResponseEntity.ok(Map.of(

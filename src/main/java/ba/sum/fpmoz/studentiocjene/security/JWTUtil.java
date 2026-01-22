@@ -20,6 +20,9 @@ public class JWTUtil {
     @Value("${jwt.expiration}")
     private Long expiration; // u ms
 
+    @Value("${jwt.refresh-expiration}")
+    private Long refreshExpiration;
+
     // Dobiva SecretKey za potpisivanje
     public SecretKey getSigningKey() {
         return new SecretKeySpec(secret.getBytes(), "HmacSHA256");
@@ -40,8 +43,18 @@ public class JWTUtil {
     }
 
     // Generira refresh token
-    public String generateRefreshToken() {
-        return UUID.randomUUID().toString();
+    // Refresh token
+    public String generateRefreshToken(String username) {
+        Date now = new Date();
+        Date expiryDate = new Date(now.getTime() + refreshExpiration);
+
+        return Jwts.builder()
+                .setSubject(username)
+                .claim("type", "refresh")
+                .setIssuedAt(now)
+                .setExpiration(expiryDate)
+                .signWith(getSigningKey())
+                .compact();
     }
 
     // Provjera tokena
