@@ -1,0 +1,42 @@
+version: '3.8'
+services:
+  ednevnik:
+    build: .
+    container_name: ednevnik
+    image: ednevnik:latest
+    ports:
+      - "80:8080"
+    networks:
+      - rest-network
+    volumes:
+      - java-data:/app/uploads
+    depends_on:
+      - mysql
+    environment:
+      - MYSQL_HOST=mysql
+
+
+  mysql:
+    container_name: mysql
+    image: mysql:8.0
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_general_ci
+    networks:
+      - rest-network
+    environment:
+      MYSQL_ROOT_PASSWORD: lozinka
+      MYSQL_DATABASE: evidencija
+    volumes:
+      - mysql-data:/var/lib/mysql
+    restart: always
+
+
+networks:
+  rest-network:
+    driver: bridge
+
+
+volumes:
+  mysql-data:
+  java-data:
